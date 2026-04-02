@@ -97,3 +97,15 @@ export interface TypeEffectivenessMap {
   '0.25x': string[]
   '0x': string[]
 }
+
+export interface PokemonEncounter {
+  location_area: { name: string; url: string }
+  version_details: Array<{
+    version: { name: string }
+    max_chance: number
+    encounter_details: Array<{
+      method: { name: string }
+      chance: number
+    }>
+  }>
+}

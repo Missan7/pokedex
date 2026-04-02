@@ -4,6 +4,7 @@ import { usePokemon, usePokemonSpecies, useEvolutionChain } from '../hooks/usePo
 import TypeBadge from '../components/TypeBadge'
 import StatBar from '../components/StatBar'
 import TypeEffectiveness from '../components/TypeEffectiveness'
+import EncounterLocations from '../components/EncounterLocations'
 import { getTypeColor } from '../utils/typeColors'
 import type { EvolutionChainLink } from '../types/pokemon'
 
@@ -304,6 +305,11 @@ export default function PokemonDetailPage() {
                 </div>
               </Section>
             )}
+
+            {/* Encounter locations */}
+            <Section title="Lieux de rencontre">
+              <EncounterLocations pokemonId={pokemon.id} />
+            </Section>
           </div>
         </div>
       </div>

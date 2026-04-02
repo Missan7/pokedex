@@ -1,9 +1,12 @@
 import { useState, useMemo, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { usePokemonList } from '../hooks/usePokemonList'
 import PokemonCard from '../components/PokemonCard'
 import SearchBar from '../components/SearchBar'
 import TypeFilter from '../components/TypeFilter'
+import GenerationFilter from '../components/GenerationFilter'
 import frenchNames from '../data/frenchNames.json'
+import { GENERATIONS } from '../utils/generations'
 
 const PAGE_SIZE = 48
 
@@ -11,11 +14,13 @@ export default function HomePage() {
   const { data: allPokemon, isLoading, isError } = usePokemonList()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
+  const [genFilter, setGenFilter] = useState<number | null>(null)
   const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
     if (!allPokemon) return []
     let list = allPokemon
+
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter(p => {
@@ -25,8 +30,17 @@ export default function HomePage() {
         return frName ? frName.toLowerCase().includes(q) : false
       })
     }
+
+    if (genFilter !== null) {
+      const { min, max } = GENERATIONS[genFilter]
+      list = list.filter(p => {
+        const id = parseInt(p.url.split('/').filter(Boolean).pop() ?? '0')
+        return id >= min && id <= max
+      })
+    }
+
     return list
-  }, [allPokemon, search])
+  }, [allPokemon, search, genFilter])
 
   // For type filter we rely on the card's own data, so we slice after search
   const paginated = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page])
@@ -38,6 +52,11 @@ export default function HomePage() {
 
   const handleTypeFilter = useCallback((t: string | null) => {
     setTypeFilter(t)
+    setPage(1)
+  }, [])
+
+  const handleGenFilter = useCallback((g: number | null) => {
+    setGenFilter(g)
     setPage(1)
   }, [])
 
@@ -60,11 +79,21 @@ export default function HomePage() {
                 {filtered.length} Pokémon
               </span>
             )}
+            <Link
+              to="/team"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 rounded-xl text-xs font-semibold transition"
+            >
+              <span>⚔️</span>
+              <span>Mon équipe</span>
+            </Link>
           </div>
           <SearchBar value={search} onChange={handleSearch} />
         </div>
-        <div className="max-w-7xl mx-auto px-4 pb-3 overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-4 pb-2 overflow-x-auto">
           <TypeFilter selected={typeFilter} onChange={handleTypeFilter} />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 pb-3 overflow-x-auto">
+          <GenerationFilter selected={genFilter} onChange={handleGenFilter} />
         </div>
       </header>
 
@@ -120,9 +149,6 @@ function PokemonGrid({
   items: { name: string; url: string }[]
   typeFilter: string | null
 }) {
-  // When a type filter is active, we render all cards but hide non-matching ones
-  // This is handled at the card level via CSS; for simplicity we show all and let
-  // filtering happen via the PokemonCard's loaded data using a wrapper component
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       {items.map(p => (
@@ -141,13 +167,9 @@ function FilteredCard({
   url: string
   typeFilter: string | null
 }) {
-  // When no type filter, just render the card
   if (!typeFilter) {
     return <PokemonCard name={name} url={url} />
   }
-
-  // With type filter: PokemonCard already fetches the data. We use a wrapper to
-  // conditionally hide the card after it loads.
   return <TypeFilteredCard name={name} url={url} typeFilter={typeFilter} />
 }
 
@@ -172,7 +194,6 @@ function TypeFilteredCard({
     staleTime: Infinity,
   })
 
-  // Not loaded yet — show skeleton so layout doesn't jump
   if (!data) return <div className="rounded-2xl bg-white/5 animate-pulse aspect-[3/4]" />
 
   const hasType = data.types.some(t => t.type.name === typeFilter)
