@@ -3,6 +3,7 @@ import { usePokemonList } from '../hooks/usePokemonList'
 import PokemonCard from '../components/PokemonCard'
 import SearchBar from '../components/SearchBar'
 import TypeFilter from '../components/TypeFilter'
+import frenchNames from '../data/frenchNames.json'
 
 const PAGE_SIZE = 48
 
@@ -17,7 +18,12 @@ export default function HomePage() {
     let list = allPokemon
     if (search.trim()) {
       const q = search.trim().toLowerCase()
-      list = list.filter(p => p.name.includes(q))
+      list = list.filter(p => {
+        if (p.name.includes(q)) return true
+        const id = p.url.split('/').filter(Boolean).pop()
+        const frName = id ? (frenchNames as Record<string, string>)[id] : undefined
+        return frName ? frName.toLowerCase().includes(q) : false
+      })
     }
     return list
   }, [allPokemon, search])
